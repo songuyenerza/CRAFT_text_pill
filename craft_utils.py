@@ -33,6 +33,7 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
     det = []
     mapper = []
     agg_list = []
+    area_s = []
     for k in range(1,nLabels):
         # size filtering
         size = stats[k, cv2.CC_STAT_AREA]
@@ -61,17 +62,40 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
         np_contours = np.roll(np.array(np.where(segmap!=0)),1,axis=0).transpose().reshape(-1,2)
         rectangle = cv2.minAreaRect(np_contours)
         # rect = cv2.minAreaRect(cnt)
-        (_,_),(_,_), agg = rectangle
-        agg_list.append(agg)
+        (_,_),(w_b,h_b), agg = rectangle
+        s = w_b*h_b
+        # agg_list.append(agg)
+
+
         box = cv2.boxPoints(rectangle)
+        if len(np_contours) > 0:
+            l, r = min(np_contours[:,0]), max(np_contours[:,0])
+            t, b = min(np_contours[:,1]), max(np_contours[:,1])
+            area_s.append(s)
+
+            if (r-l) > (b-t):
+                # print("bbbb",agg)
+                if agg<45:
+                    agg_list.append(agg)
+                else:
+                    agg_list.append(agg -90)
+            else:
+                # print("aaa",agg)
+                if agg >45:
+                    agg_list.append(agg-180)
+                else:
+                    agg_list.append(agg-90)
 
         # align diamond-shape
+
         w, h = np.linalg.norm(box[0] - box[1]), np.linalg.norm(box[1] - box[2])
         box_ratio = max(w, h) / (min(w, h) + 1e-5)
         if abs(1 - box_ratio) <= 0.1:
             l, r = min(np_contours[:,0]), max(np_contours[:,0])
             t, b = min(np_contours[:,1]), max(np_contours[:,1])
             box = np.array([[l, t], [r, t], [r, b], [l, b]], dtype=np.float32)
+
+  
 
         # make clock-wise order
         startidx = box.sum(axis=1).argmin()
@@ -81,7 +105,8 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
         det.append(box)
         mapper.append(k)
     if len(agg_list) != 0:
-        avv_agg = Average(agg_list)
+        index =  np.argmax(area_s)
+        avv_agg = agg_list[index]
     else:
         avv_agg = 0
 

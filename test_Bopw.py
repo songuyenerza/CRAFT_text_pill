@@ -101,24 +101,27 @@ if __name__ == '__main__':
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = False
     net.eval()
-    data_folder = "D:/ANlab/detect_text_pill/box_output/"
+    data_folder = "/home/anlab/Desktop/Songuyen/PIl_detection/check/"
     count = 0
     for path in os.listdir(data_folder):
         count += 1
         image = loadImage(data_folder + path)
-        bboxes, polys, score_text, av_aggle = test_net(net, image, text_threshold = 0.05, link_threshold = 0.3,
+        bboxes, polys, score_text, av_aggle = test_net(net, image, text_threshold = 0.1, link_threshold = 0.3,
             low_text = 0.3, cuda  = True, poly= False, refine_net= None)
         box_img = bboxes
         img_ori = image.copy()
         if len(box_img) != 0:
             for i in range(len(box_img)):
                 box = np.int0(box_img[i])
-                im2 = cv2.drawContours(img_ori,[box] ,0,(100,100,100),2)
+                # im2 = cv2.drawContours(img_ori,[box] ,0,(100,100,100),2)
         else:
             im2 = img_ori
         (h, w) = im2.shape[:2]
         center = (w // 2, h // 2)
         M = cv2.getRotationMatrix2D(center, av_aggle, 1.0)
-        im2 = cv2.warpAffine(im2, M, (w, h), flags=cv2.INTER_CUBIC,
+        im3 = cv2.warpAffine(im2, M, (w, h), flags=cv2.INTER_CUBIC,
                     borderMode=cv2.BORDER_REPLICATE)
-        cv2.imwrite("D:/ANlab/detect_text_pill/CRAFT-pytorch/check/" + str(count) + ".jpg" , im2)
+
+        cv2.imwrite("/home/anlab/Desktop/Songuyen/PIl_detection/test/" +str(count) +"_"+  str(av_aggle) + ".jpg" , im3)
+        cv2.imwrite("/home/anlab/Desktop/Songuyen/PIl_detection/test/" +str(count) +"_"+  "ori" + ".jpg" , im2)
+
