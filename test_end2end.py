@@ -1,5 +1,22 @@
 from detect_yolov5 import *
 from test_Bopw_label import *
+from operator import itemgetter, attrgetter
+
+
+def sorted_box(box_list):
+    box_list = sorted(box_list, key = lambda box_list: box_list[0])
+    box_12 = box_list[:2]
+    box_34 = box_list[2:]
+
+    box_12 = sorted(box_12, key = lambda box_12: box_12[1])
+    box1 = box_12[0]
+    box2 = box_12[1]
+
+    box_34 = sorted(box_34, key = lambda box_34: box_34[1])
+    box3 = box_34[0]
+    box4 = box_34[1]
+
+    return [box1, box3, box4, box2]
 
 
 if __name__ == '__main__':
@@ -12,7 +29,7 @@ if __name__ == '__main__':
     net.eval()
 
     #load_model_yolov5
-    weight = "/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/detect_point/cp/best_121222.pt" #weights_yolov5
+    weight = "/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/detect_point/cp/best_yolov5_121222_V2.pt" #weights_yolov5
     model, device = load_model(weights=weight)
     print("GPU Memory_____: %s" % getMemoryUsage())
 
@@ -33,13 +50,13 @@ if __name__ == '__main__':
         # print("box_image_no", box_image_no)
         img_output = folder_output + path
         stop = timeit.default_timer()
-        
 
-        if len(box_image_no) ==4:
+        if len(box_image_no) == 4:
             box_crop = []
             for box in box_image_no:
                 b = [box[0], box[1]]
                 box_crop.append(b)
+            box_crop = sorted_box(box_crop)
             box_crop = np.array(box_crop)
             box_crop = np.int0(box_crop)
             img_final = cv2.drawContours(img_ori.copy(),[box_crop],0,(0,0,256),2)
