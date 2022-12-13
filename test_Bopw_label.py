@@ -209,26 +209,21 @@ def mer_box(boxs):
 #     return boxes
 
 def getBoxPanels(mask):
-    scale = mask.shape[0]/256
-    kernel = np.ones((5,7),np.uint8)
-    mask = cv2.erode(mask,kernel,iterations = 1)
-    mask = cv2.dilate(mask,kernel,iterations = 7)
-    # mask = cv2.dilate(mask,kernel,iterations = 7)
-    # mask = cv2.erode(mask,kernel,iterations = 7)
-    thresh = mask
-    thresh[thresh > 20] = 255
-    thresh[thresh<= 20] = 0
+    
+    # thresh = mask
+    # thresh[thresh > 20] = 255
+    # thresh[thresh<= 20] = 0
     # print("thres", thresh)
     w, h = mask.shape
-    rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 9))
+    # rect_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 9))
 
-    thresh = cv2.erode(thresh, rect_kernel, iterations = 2)
-    dilation = cv2.dilate(thresh, rect_kernel, iterations = 7)
-    kernel = np.ones((3, 3), np.uint8)
+    # thresh = cv2.erode(thresh, rect_kernel, iterations = 2)
+    # dilation = cv2.dilate(thresh, rect_kernel, iterations = 7)
+    # kernel = np.ones((3, 3), np.uint8)
 
-    kernel = cv2.morphologyEx(kernel, cv2.MORPH_CLOSE, kernel, iterations=1)
-    cv2.imwrite("mask.png", dilation)
-    dilation = Image.fromarray(dilation)
+    # kernel = cv2.morphologyEx(kernel, cv2.MORPH_CLOSE, kernel, iterations=1)
+    # cv2.imwrite("mask.png", dilation)
+    dilation = Image.fromarray(mask)
     dilation = ImageOps.grayscale(dilation)
     dilation = np.array(dilation)
     contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -237,15 +232,15 @@ def getBoxPanels(mask):
     area_list = []
     for c in contours:
         area = cv2.contourArea(c)
-        if area < 0.1*h*w :
-            continue
+        # if area < 0.05*h*w :
+        #     continue
         rect = cv2.minAreaRect(c)
         x, y, w, h = cv2.boundingRect(c)
         # boxes.append((x, y ,x +w , y + h))
         results.append([x, y ,x +w , y + h])
         area_list.append(area)
         box = cv2.boxPoints(rect)
-        box = np.int0(box)
+        # box = np.int0(box)
         boxes.append(box)
             # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
     # exit()	
@@ -281,8 +276,6 @@ if __name__ == '__main__':
             low_text = 0.1, cuda  = True, poly= False, refine_net= None)
         box_img = bboxes
         text_thres_img = cv2.resize(text_thres_img, (image.shape[1], image.shape[0]))
-        # cv2.imwrite("check.png", text_thres_img)
-        # print("score_text", text_thres_img.shape, image.shape)
 
         img_ori = image.copy()
         if len(box_img) != 0:
@@ -291,7 +284,6 @@ if __name__ == '__main__':
                 # im2 = cv2.drawContours(img_ori,[box] ,0,(0,0,256),2)
                 im2 = img_ori
                 poly = polys[i]
-                # print("poly", poly)
 
                 poly = np.array(poly).astype(np.int32).reshape((-1))
                 poly = poly.reshape(-1, 2)
@@ -303,7 +295,6 @@ if __name__ == '__main__':
                 im2 = cv2.rectangle(im2, (b[0],b[1]), (b[2],b[3]), (0,256,255), 2)
                 # print(r)
                 im2 = cv2.drawContours(im2,[r],0,(0,0,256),2)
-
         else:
             im2 = img_ori
         (h, w) = im2.shape[:2]

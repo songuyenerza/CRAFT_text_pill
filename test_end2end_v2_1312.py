@@ -154,6 +154,8 @@ if __name__ == '__main__':
                 img_final = cv2.drawContours(img_ori.copy(),[box_max],0,(0,0,256),2)
 
                 # img_final = fourPointTransform(img_ori.copy(), box_max)
+            else:
+                img_final = img_ori
 
         cv2.imwrite(img_output, img_final)
 
