@@ -130,7 +130,7 @@ if __name__ == '__main__':
         center = img_ori.shape
         h0, w0 = center[0], center[1]
         start = timeit.default_timer()
-        box_img, box_image_no = detect_box(model, device, img_ori,imgsz=[640,640],conf_thres=0.8, iou_thres = 0.3)
+        box_img, box_image_no = detect_box(model, device, img_ori,imgsz=[800,800],conf_thres=0.4, iou_thres = 0.3)
         # print("box_image_no", box_image_no)
         img_output = folder_output + path
         stop = timeit.default_timer()
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                 b = [box[0], box[1]]
                 box_crop.append(b)
             box_crop = sorted_box(box_crop)
-            if 0.5 <box_crop[0][1] / box_crop[1][1] < 2:
+            if 0.66 <box_crop[0][1] / box_crop[1][1] < 1.5 and 0.7 < box_crop[0][0] / box_crop[3][0] < 1.5: 
                 box_crop = np.array(box_crop)
                 box_crop = np.int0(box_crop)
                 img_final = cv2.drawContours(img_ori.copy(),[box_crop],0,(0,0,256),2)
