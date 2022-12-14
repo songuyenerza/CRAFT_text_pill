@@ -133,6 +133,24 @@ def loadImage(img_file):
     # img = cv2.filter2D(src=img, ddepth=-1, kernel=kernel)
     return img
 
+
+def sorted_box(box_list):
+
+    #box_1 = topleft, box3 = topright, box4 = b_right, box2 = b_left
+    box_list = sorted(box_list, key = lambda box_list: box_list[0])
+    box_12 = box_list[:2]
+    box_34 = box_list[2:]
+
+    box_12 = sorted(box_12, key = lambda box_12: box_12[1])
+    box1 = box_12[0]
+    box2 = box_12[1]
+
+    box_34 = sorted(box_34, key = lambda box_34: box_34[1])
+    box3 = box_34[0]
+    box4 = box_34[1]
+
+    return [box1, box3, box4, box2]
+
 def test_net(net, image, text_threshold, link_threshold, low_text, cuda=True, poly = False, refine_net=None):
     t0 = time.time()
     # resize
@@ -230,7 +248,12 @@ def getBoxPanels(mask):
     boxes = []
     results = []
     area_list = []
+    approx_list = []
     for c in contours:
+        perimeter = cv2.arcLength(c, True)
+        approx = cv2.approxPolyDP(c, 0.06* perimeter, True)
+        # print('approx', approx)
+        approx_list.append(approx)
         area = cv2.contourArea(c)
         # if area < 0.05*h*w :
         #     continue
@@ -245,10 +268,18 @@ def getBoxPanels(mask):
             # cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
     # exit()	
     if len(area_list) > 0:
+
         index = np.argmax(area_list)
-        box_max = boxes[index]
+        if len(approx_list[index]) ==4:
+            box_max = approx_list[index]
+        else:
+            box_max = boxes[index]
+            box_max = sorted_box(box_max)
+            box_max = np.array(box_max)
+            box_max = np.int0(box_max)
     else:
         box_max = []
+
     return boxes, results, box_max
 
 if __name__ == '__main__':

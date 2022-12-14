@@ -70,7 +70,7 @@ def fourPointTransform(image, rect):
     # return the warped image
     return  warped
 
-def predict_unet(img_path, model_unet, thresh = 0.95):
+def predict_unet(img_path, model_unet, thresh = 0.5):
     img = imread(img_path)[:,:,:3]
     image = img.copy()
     h0, w0 = image.shape[1],image.shape[0]
@@ -86,9 +86,12 @@ def predict_unet(img_path, model_unet, thresh = 0.95):
     pred = TF.to_pil_image(mask_pred.float().squeeze(0))
     mask = np.array(pred)
     kernel = np.ones((7,7),np.uint8)
-    mask = cv2.erode(mask,kernel,iterations = 3)
+    mask = cv2.erode(mask,kernel,iterations = 5)
     mask = cv2.dilate(mask,kernel,iterations = 1)
     mask = cv2.dilate(mask,kernel,iterations = 1)
+    mask = cv2.dilate(mask,kernel,iterations = 1)
+    mask = cv2.dilate(mask,kernel,iterations = 2)
+
 
     mask_pil = Image.fromarray(mask)
     mask_pil = mask_pil.convert('L')
@@ -103,7 +106,7 @@ if __name__ == '__main__':
     model_unet = AttU_Net()
     model_unet = model_unet.float()
     model_unet = model_unet.to(device)
-    model_unet.load_state_dict(torch.load('/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/detect_point/cp/Segment_unet_cpbest_1212.pth', map_location=torch.device('cuda')))
+    model_unet.load_state_dict(torch.load('/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/detect_point/cp/Segment_unet_cpbest_1412_v2.pth', map_location=torch.device('cuda')))
     model_unet.eval()
 
     #load_model_yolov5
@@ -112,21 +115,22 @@ if __name__ == '__main__':
     print("GPU Memory_____: %s" % getMemoryUsage())
 
     #foler_save_output
-    folder_output = "/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/TV_L-20221208T075619Z-001/check_croped_131222/"
+    folder_output = "/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/TV_L-20221208T075619Z-001/check_croped_141222/"
 
     #load_path_img_input
     data_folder = "/media/anlab/0e731fe3-5959-4d40-8958-e9f6296b38cb/home/anlab/songuyen/label_aLong/panasonic-20221209T082601Z-001/panasonic/"
     with open( data_folder +  'paths.txt','r') as f:
         IMAGE_PATH_DB = [line.strip('\n') for line in f.readlines()]
-
+    err = 0
+    total = 0
     for path in IMAGE_PATH_DB:
-
+        total += 1
         img_ori = cv2.imread(data_folder + path)
 
         center = img_ori.shape
         h0, w0 = center[0], center[1]
         start = timeit.default_timer()
-        box_img, box_image_no = detect_box(model, device, img_ori,imgsz=[800,800],conf_thres=0.8, iou_thres = 0.3)
+        box_img, box_image_no = detect_box(model, device, img_ori,imgsz=[640,640],conf_thres=0.8, iou_thres = 0.3)
         # print("box_image_no", box_image_no)
         img_output = folder_output + path
         stop = timeit.default_timer()
@@ -144,20 +148,25 @@ if __name__ == '__main__':
                 # img_final = fourPointTransform(img_ori.copy(), box_crop )
 
         else:
+            img_final = img_ori.copy()
             img_path = data_folder + path
             mask_unet = predict_unet(img_path, model_unet)
+            # img_final[mask_unet == 255] = (128,128,128)
             box_mers, results, box_max = getBoxPanels(mask_unet)
             if len(box_max) > 0:
-                box_max = sorted_box(box_max)
-                box_max = np.array(box_max)
-                box_max = np.int0(box_max)
-                img_final = cv2.drawContours(img_ori.copy(),[box_max],0,(0,0,256),2)
+                # print(box_max)
+                # box_max = sorted_box(box_max)
+                # box_max = np.array(box_max)
+                # box_max = np.int0(box_max)
+                img_final = cv2.drawContours(img_final,[box_max],0,(0,255,256),2)
 
                 # img_final = fourPointTransform(img_ori.copy(), box_max)
             else:
                 img_final = img_ori
+                err += 1
+        print('Time: ', stop - start)  
 
         cv2.imwrite(img_output, img_final)
 
-        print('Time: ', stop - start)  
+    print(err, total, err/total)
         # print("path_img", path)
